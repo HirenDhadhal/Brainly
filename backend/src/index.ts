@@ -5,11 +5,13 @@ import bcrypt from 'bcrypt';
 import { jwt_secret } from './config';
 import { userMiddleware } from './middleware';
 import { randon } from './utils';
+import cors from 'cors';
 
 const app = express();
 
 app.use(express.json());
 connectDB();
+app.use(cors());
 
 app.post('/api/v1/signup', async (req, res) => {
   //ZOD Validation [PENDING]

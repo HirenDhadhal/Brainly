@@ -1,13 +1,14 @@
 import PlusIcon from '../icons/PlusIcon';
 import ShareIcon from '../icons/ShareIcon';
 import Button from './Button';
+import Card from './Card';
 
 const MainContent = () => {
   return (
-    <div className='h-screen w-full bg-amber-100'>
-      <div className='flex items-center mt-25 mb-10 w-full'>
+    <div className='h-screen w-full bg-amber-100 p-4'>
+      <div className=' mt-25 mb-10 w-full'>
         <div>left link</div>
-        <div className='flex items-center justify-around'>
+        <div className='flex items-center justify-end gap-4'>
           <Button
             variant='primary'
             text='Share Brain'
@@ -20,10 +21,17 @@ const MainContent = () => {
           />
         </div>
       </div>
-      <div className='flex justify-around'>
-        <div className='bg-green-200 w-64 h-80 rounded-3xl'>card1</div>
-        <div className='bg-green-200 w-64 h-80 rounded-3xl'>card2</div>
-        <div className='bg-green-200 w-64 h-80 rounded-3xl'>card3</div>
+      <div className='flex gap-4'>
+        <Card
+          title='Youtube video'
+          link='https://www.youtube.com/watch?v=SweexyXMYYc'
+          type='youtube'
+        />
+        <Card
+          title='Tweet'
+          link='https://x.com/arpit_bhayani/status/1893870952003629488'
+          type='twitter'
+        />
       </div>
     </div>
   );
