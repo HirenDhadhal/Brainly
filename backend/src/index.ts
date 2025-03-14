@@ -6,6 +6,11 @@ import { jwt_secret } from './config';
 import { userMiddleware } from './middleware';
 import { randon } from './utils';
 import cors from 'cors';
+import {
+  getAIResponse,
+  processAndStoreContent,
+  searchPinecone,
+} from './embeddings/storeEmbeddings';
 
 const app = express();
 
@@ -18,12 +23,12 @@ app.post('/api/v1/signup', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  // const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
     await UserModel.create({
       username: username,
-      password: hashedPassword,
+      password: password,
     });
 
     res.json({ message: 'You are Signed Up' });
@@ -62,12 +67,14 @@ app.post('/api/v1/signin', async (req, res) => {
 app.post('/api/v1/content', userMiddleware, async (req, res) => {
   const link = req.body.link;
   const title = req.body.title;
+  const type = req.body.type;
 
   console.log('in endpoint');
 
   await ContentModel.create({
     link,
     title,
+    type,
     //@ts-ignore
     userId: req.userId,
     tags: [],
@@ -150,6 +157,40 @@ app.get('/api/v1/brain/:shareLink', async (req, res) => {
     username: user?.username,
     content: content,
   });
+});
+
+// API Endpoint
+app.all('/api/v1/loadembedding', async (req, res) => {
+  try {
+    if (req.method === 'GET') {
+      // Store embeddings for all content in Pinecone
+      await processAndStoreContent();
+      return res.json({
+        message: 'Embeddings stored successfully in Pinecone',
+      });
+    } else if (req.method === 'POST') {
+      const { query } = req.body;
+      if (!query) return res.status(400).json({ message: 'Query is required' });
+
+      // Search Pinecone for relevant content
+      const searchResults = await searchPinecone(query);
+      if (searchResults.length === 0)
+        return res.json({ message: 'No relevant data found.' });
+
+      // Combine context from top search results
+      const context = searchResults
+        .map((item) => `${item.title} (${item.link})`)
+        .join('\n');
+
+      // Get AI-generated response
+      const aiResponse = await getAIResponse(context, query);
+
+      return res.json({ response: aiResponse, sources: searchResults });
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 app.listen(3000, () => {

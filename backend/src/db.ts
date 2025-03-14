@@ -11,7 +11,7 @@ export const connectDB = async () => {
 
     console.log('MongoDB connected Successfully');
   } catch (error) {
-    console.log('Error while connecting to Database');
+    console.log('Error while connecting to Database ' + error);
     process.exit(1);
   }
 };
@@ -24,6 +24,7 @@ const UserSchema = new Schema({
 const ContentSchema = new Schema({
   title: String,
   link: String,
+  type: String,
   tags: [{ type: mongoose.Types.ObjectId, ref: 'Tag' }],
   userId: [{ type: mongoose.Types.ObjectId, ref: 'User', required: true }],
 });
