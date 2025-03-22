@@ -159,37 +159,53 @@ app.get('/api/v1/brain/:shareLink', async (req, res) => {
   });
 });
 
-// API Endpoint
-app.all('/api/v1/loadembedding', async (req, res) => {
+app.get('/api/v1/loadembedding', async (req, res) => {
   try {
-    if (req.method === 'GET') {
-      // Store embeddings for all content in Pinecone
-      await processAndStoreContent();
-      return res.json({
-        message: 'Embeddings stored successfully in Pinecone',
-      });
-    } else if (req.method === 'POST') {
-      const { query } = req.body;
-      if (!query) return res.status(400).json({ message: 'Query is required' });
+    // Store embeddings for all content in Pinecone
+    await processAndStoreContent();
 
-      // Search Pinecone for relevant content
-      const searchResults = await searchPinecone(query);
-      if (searchResults.length === 0)
-        return res.json({ message: 'No relevant data found.' });
+    res.json({
+      message: 'Embeddings stored successfully in Pinecone',
+    });
+  } catch (error) {
+    console.error('Error storing embeddings:', error);
+    res.status(500).json({
+      message: 'Error storing embeddings in Pinecone',
+    });
+  }
+});
 
-      // Combine context from top search results
-      const context = searchResults
-        .map((item) => `${item.title} (${item.link})`)
-        .join('\n');
+// API Endpoint
+app.post('/api/v1/loadembedding', async (req, res) => {
+  try {
+    const { query } = req.body;
+    if (!query) res.status(400).json({ message: 'Query is required' });
 
-      // Get AI-generated response
+    // Search Pinecone for relevant content
+    const searchResults = await searchPinecone(query);
+    if (searchResults.length === 0)
+      res.json({ message: 'No relevant data found.' });
+
+    // Combine context from top search results
+    const context = searchResults
+      .map((item) => `${item?.title} (${item?.link})`)
+      .join('\n');
+
+    // Get AI-generated response
+    try {
       const aiResponse = await getAIResponse(context, query);
+      res.json({ response: aiResponse, sources: searchResults });
+    } catch (error) {
+      console.log(error);
 
-      return res.json({ response: aiResponse, sources: searchResults });
+      res.status(500).json({
+        message: 'Error fetching response from AI model',
+      });
     }
   } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    res
+      .status(500)
+      .json({ message: 'Error while getting response from AI model' });
   }
 });
 
