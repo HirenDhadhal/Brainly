@@ -5,7 +5,7 @@ import SidebarItem from './SidebarItem';
 
 interface SideBarProps {
   SidebarOpen: boolean;
-  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setSidebarOpen: (open: boolean) => void;
 }
 
 const SideBar: React.FC<SideBarProps> = ({ SidebarOpen, setSidebarOpen }) => {

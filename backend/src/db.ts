@@ -17,8 +17,10 @@ export const connectDB = async () => {
 };
 
 const UserSchema = new Schema({
-  username: { type: String, unique: true, required: true },
-  password: { type: String, required: true },
+  name: {type: String, required: true},
+  email: {type: String, required: true, unique: true,},
+  password: { type: String,},
+  image: {type: String},
 });
 
 const ContentSchema = new Schema({
@@ -26,7 +28,7 @@ const ContentSchema = new Schema({
   link: String,
   type: String,
   tags: [{ type: mongoose.Types.ObjectId, ref: 'Tag' }],
-  userId: [{ type: mongoose.Types.ObjectId, ref: 'User', required: true }],
+  userId: { type: mongoose.Types.ObjectId, ref: 'users', required: true },
 });
 
 const LinkSchema = new Schema({

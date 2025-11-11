@@ -1,19 +1,26 @@
-import axios from 'axios';
-import { useEffect, useState } from 'react';
-import { BACKEND_URL } from '../config';
+import axios from "axios";
+import { BACKEND_URL } from "../config";
+import { useStateStore } from "../store/stateStore";
+import { ContentItem } from "../types/types";
 
 export function useContent() {
-  const [contents, setContents] = useState([]);
+  const setIsLoading = useStateStore.getState().setIsLoading;
+  const setAllNotes = useStateStore.getState().setAllNotes;
+  setIsLoading(true);
 
-  useEffect(() => {
-    const response = axios
-      .get(`${BACKEND_URL}/api/v1/content`, {
-        headers: {
-          Authorization: localStorage.getItem('token'),
-        },
-      })
-      .then((res) => setContents(res.data.content));
-  }, []);
-
-  return contents;
+  async function fetchNotes() {
+    try {
+      const response = await axios.get<{ content: ContentItem[] }>(
+        `${BACKEND_URL}/api/v1/content`,
+        {
+          withCredentials: true,
+        }
+      );
+      setAllNotes(response.data.content);
+    } catch (err: any) {
+      console.log(`Error while fetching notes, ${err}`);
+    }
+    setIsLoading(false);
+  }
+  return { fetchNotes };
 }

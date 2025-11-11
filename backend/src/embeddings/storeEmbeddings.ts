@@ -1,19 +1,23 @@
-import { ContentModel } from '../db';
-import { Pinecone } from '@pinecone-database/pinecone';
-import OpenAI from 'openai';
-import { HfInference } from '@huggingface/inference';
+import { ContentModel } from "../db";
+import { Pinecone } from "@pinecone-database/pinecone";
+import OpenAI from "openai";
+import { HfInference } from "@huggingface/inference";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const OPENAI = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 const hf = new HfInference(process.env.huggingface_api_key);
-const hf2 = require('@huggingface/inference');
+const hf2 = require("@huggingface/inference");
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY!,
 });
 
-const index = pc.Index('content-embeddings');
+// const client = new genai.Client({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+
+const index = pc.Index("content-embeddings");
 
 // Generate embeddings and store in Pinecone
 async function storeEmbeddingInPinecone(
@@ -32,24 +36,31 @@ async function storeEmbeddingInPinecone(
 
 // Function to search Pinecone and retrieve the best matching content
 export async function searchPinecone(query: string) {
-  const queryEmbedding = await hf.featureExtraction({
-    model: 'sentence-transformers/all-MiniLM-L6-v2',
-    inputs: query,
-  });
+  try {
+    const queryEmbedding = await hf.featureExtraction({
+      // model: 'intfloat/multilingual-e5-large',
+      model: "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
+      inputs: query,
+      provider: "hf-inference",
+    });
 
-  // Ensure the embedding is a flat array (number[])
-  const vector = Array.isArray(queryEmbedding[0])
-    ? (queryEmbedding as number[][]).flat()
-    : (queryEmbedding as number[]);
+    // Ensure the embedding is a flat array (number[])
+    const vector = Array.isArray(queryEmbedding[0])
+      ? (queryEmbedding as number[][]).flat()
+      : (queryEmbedding as number[]);
 
-  const result = await index.query({
-    vector: vector,
-    topK: 3, // Get top 3 results
-    includeMetadata: true,
-  });
+    const result = await index.query({
+      vector: vector,
+      topK: 3, // Get top 3 results
+      includeMetadata: true,
+    });
 
-  return result.matches.map((match) => match.metadata);
+    return result.matches.map((match) => match.metadata);
+  } catch (err) {
+    console.log(err);
+  }
 }
+
 
 export async function processAndStoreContent() {
   const contents = await ContentModel.find({});
@@ -59,16 +70,9 @@ export async function processAndStoreContent() {
 
     try {
       const embedding = await hf.featureExtraction({
-        model: 'sentence-transformers/all-MiniLM-L6-v2',
+        model: "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
         inputs: textForEmbedding,
       });
-      // const embedding = await OPENAI.embeddings.create({
-      //   model: 'text-embedding-3-small',
-      //   input: textForEmbedding,
-      //   encoding_format: 'float',
-      // });
-
-      console.log('generated embedding ' + embedding);
 
       if (!embedding) {
         console.log(
@@ -81,13 +85,13 @@ export async function processAndStoreContent() {
         title: content.title,
         link: content.link,
         type: content.type,
-        userId: content.userId.toString(),
+        //@ts-ignore
+        userId: content.userId._id.toString(),
       });
 
-      console.log('stored current embedding');
-      console.log('All content processed and stored in Pinecone.');
+      console.log("All content processed and stored in Pinecone.");
     } catch (error) {
-      console.log('generate embedding TryCatch failed' + error);
+      console.log("generate embedding TryCatch failed" + error);
     }
   }
 }
@@ -96,19 +100,18 @@ export async function processAndStoreContent() {
 export async function getAIResponse(context: string, userQuery: string) {
   try {
     const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) throw new Error('Missing Google API Key');
 
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    if (!apiKey) throw new Error("Missing Google API Key");
 
-    console.log(context + ' ' + userQuery);
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     const requestBody = {
       contents: [
         {
-          role: 'user',
+          role: "user",
           parts: [
             {
-              text: `You are an AI assistant. Use the following context to answer the user's question:\n\nContext:\n${context}\n\nNow, answer this question based on the above context:\n\nUser Query:\n${userQuery}`,
+              text: `You are an AI assistant. The user asked: "${userQuery}".\nHere are some links with titles and descriptions:\n${context}\nFor each link that is relevant to the user's question, provide:\n1. A short summary of what the content is about (based on your knowledge of the topic).\n2. The link itself.\nAnswer in a clear, readable format.`,
             },
           ],
         },
@@ -116,28 +119,29 @@ export async function getAIResponse(context: string, userQuery: string) {
     };
 
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();
+    
     console.log(JSON.stringify(data, null, 2));
 
     if (!data.candidates || data.candidates.length === 0) {
-      return 'No response generated.';
+      return "No response generated.";
     }
 
     // Extract the actual text response
     const aiResponse = data.candidates[0].content.parts
       .map((part: any) => part.text)
-      .join('\n');
+      .join("\n");
 
     // return data.candidates[0].content.trim();
     return aiResponse.trim();
   } catch (error) {
-    console.log('Failure! Could not get AI response from the AI');
+    console.log("Failure! Could not get AI response from the AI");
   }
 }

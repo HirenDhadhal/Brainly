@@ -4,6 +4,7 @@ import Button from './Button';
 import Input from './Input';
 import axios from 'axios';
 import { BACKEND_URL } from '../config';
+import { useStateStore } from '../store/stateStore';
 
 enum ContentType {
   Youtube = 'youtube',
@@ -18,6 +19,8 @@ interface CreateContentModalProps {
 const CreateContentModal = ({ open, onClose }: CreateContentModalProps) => {
   const titleRef = useRef<HTMLInputElement>(null);
   const linkRef = useRef<HTMLInputElement>(null);
+  const CreateContentModelOpen = useStateStore((state) => state.CreateContentModelOpen);
+  const setIsCreateContentModelOpen = useStateStore.getState().setIsCreateContentModelOpen;
   const [type, setType] = useState('youtube');
 
   async function addContent() {
@@ -32,16 +35,14 @@ const CreateContentModal = ({ open, onClose }: CreateContentModalProps) => {
         type,
       },
       {
-        headers: {
-          Authorization: localStorage.getItem('token'),
-        },
+        withCredentials: true,
       }
     );
   }
 
   return (
     <div>
-      {open && (
+      {CreateContentModelOpen && (
         <div>
           <div className='w-screen h-screen bg-slate-300 fixed top-0 left-0 opacity-65 flex justify-center'></div>
           <div className='w-screen h-screen bg-slate-300 fixed top-0 left-0 flex justify-center'>
@@ -53,8 +54,8 @@ const CreateContentModal = ({ open, onClose }: CreateContentModalProps) => {
                   </div>
                 </div>
                 <div className='flex justify-center'>
-                  <Input placeholder={'Title'} />
-                  <Input placeholder={'Link'} />
+                  <Input reference={titleRef} placeholder={'Title'} />
+                  <Input reference={linkRef} placeholder={'Link'} />
                 </div>
                 <div>
                   <h1>Type</h1>

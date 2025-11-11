@@ -22,7 +22,7 @@ export function SignUp() {
 
   return (
     <div className='h-screen w-screen bg-gray-200 flex justify-center items-center'>
-      <div className='bg-white rounded min-w-48 rounded-xl'>
+      <div className='bg-white min-w-48 rounded-xl'>
         <Input reference={usernameRef} placeholder={'Username'} />
         <Input reference={passwordRef} placeholder={'Password'} />
 
