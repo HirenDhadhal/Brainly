@@ -14,13 +14,13 @@ export function ProtectedRoute() {
     if (!currentUser) {
       setIsLoading(true);
       axios
-        .get(`${BACKEND_URL}/api/auth/status`, { withCredentials: true })
+        .get(`${BACKEND_URL}/status`, { withCredentials: true })
         .then((res) => {
           const newUser = {
-            id: res.data.user.id,
-            name: res.data.user.name,
-            email: res.data.user.email,
-            image: res.data.user.image,
+            id: res.data.id,
+            name: res.data.name,
+            email: res.data.email,
+            image: res.data.image,
           };
           setCurrentUser(newUser);
         })

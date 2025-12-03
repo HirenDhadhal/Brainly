@@ -20,7 +20,7 @@ const CreateContentModal = ({ open, onClose }: CreateContentModalProps) => {
   const titleRef = useRef<HTMLInputElement>(null);
   const linkRef = useRef<HTMLInputElement>(null);
   const CreateContentModelOpen = useStateStore((state) => state.CreateContentModelOpen);
-  const setIsCreateContentModelOpen = useStateStore.getState().setIsCreateContentModelOpen;
+  // const setIsCreateContentModelOpen = useStateStore.getState().setIsCreateContentModelOpen;
   const [type, setType] = useState('youtube');
 
   async function addContent() {

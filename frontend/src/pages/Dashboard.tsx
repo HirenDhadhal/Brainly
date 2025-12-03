@@ -9,6 +9,7 @@ import { useContent } from "../hooks/useContent";
 import { useStateStore } from "../store/stateStore";
 import { ContentItem } from "../types/types";
 import { NoNotes } from "../components/NoNotes";
+import ShareBrainModal from "../components/ShareBrain";
 
 function Dashboard() {
   const [modalOpen, setModalOpen] = useState<boolean>(false);
@@ -16,15 +17,15 @@ function Dashboard() {
   const currentUser = useStateStore((state) => state.currentUser);
   const currentCategory = useStateStore((state) => state.currentCategory);
   const contentNote = useStateStore((state) => state.contentNote);
+  const setShareBrainModelOpen =
+    useStateStore.getState().setIsShareBrainModelOpen;
   const setSideBarOpen = useStateStore.getState().setSideBarOpen;
 
-    useEffect(() => {
-        const loadNotes = async () => {
-            useContent();
-        };
+  const { fetchNotes } = useContent();
 
-        loadNotes();
-    }, []);
+  useEffect(() => {
+    fetchNotes();
+  }, []);
 
   const filterNotes = (
     currentCategory: string,
@@ -56,26 +57,10 @@ function Dashboard() {
           open={modalOpen}
           onClose={() => setModalOpen(false)}
         />
-        <div className="flex items-center justify-end gap-4">
-          {/* <Button
-            variant="primary"
-            text="Share Brain"
-            onClick={async () => {
-              const response = await axios.post(
-                `${BACKEND_URL}/api/v1/brain/share`,
-                {
-                  share: true,
-                },
-                {
-                  withCredentials: true,
-                }
-              );
 
-              const shareURL = `http://localhost:5173/share/${response.data.hash}`;
-              alert(shareURL);
-            }}
-            StartIcon={<ShareIcon />}
-          /> */}
+        <ShareBrainModal onClose={() => setShareBrainModelOpen(false)} />
+
+        <div className="flex items-center justify-end gap-4">
           <Button
             variant="secondary"
             text="Add Content"
@@ -84,17 +69,15 @@ function Dashboard() {
             }}
             StartIcon={<PlusIcon />}
           />
-        </div>
-        {/* <div className="flex gap-4">
-          {contents.map(({ type, link, title }) => (
-            <Card type={type} link={link} title={title} />
-          ))}
-          <Card
-            title='Tweet'
-            link='https://x.com/arpit_bhayani/status/1893870952003629488'
-            type='twitter'
+          <Button
+            variant="primary"
+            text="Share Brain"
+            onClick={() => {
+              setShareBrainModelOpen(true);
+            }}
+            StartIcon={<PlusIcon />}
           />
-        </div> */}
+        </div>
         {isLoading ? (
           <div className="fixed inset-0 flex items-center justify-center lg:ml-60">
             <div className="bg-white p-6 rounded-2xl flex flex-col items-center">

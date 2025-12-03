@@ -1,4 +1,5 @@
 import ShareIcon from "../icons/ShareIcon";
+import { ExternalLink } from "../icons/ExternalLink";
 
 interface CardProps {
   title: string;
@@ -29,36 +30,50 @@ function getYouTubeEmbedUrl(url: string) {
   }
 }
 
+const truncateText = (text: string, maxLength: number) => {
+  const trimmedText = text.trim();
+
+  if (trimmedText.length <= maxLength) {
+    return trimmedText;
+  }
+
+  const truncated = trimmedText.slice(0, maxLength);
+  const lastSpaceIndex = truncated.lastIndexOf(' ');
+
+  const finalTruncated = lastSpaceIndex > 0
+    ? truncated.slice(0, lastSpaceIndex)
+    : truncated;
+
+  return `${finalTruncated}...`;
+}
+
 const Card = ({ title, link, type }: CardProps) => {
   return (
-    <div>
-      <div className="border border-gray-200 max-w-72 p-4 bg-white rounded-xl">
-        <div className="flex justify-between ">
-          <div className="flex items-center">
-            <div className="pr-2 text-gray-500">
-              <ShareIcon />
-            </div>
-            {title}
+    <div className="border border-gray-300 bg-white w-96 h-[28rem] rounded-xl flex flex-col">
+      {/* Header Section */}
+      <div className="flex justify-between px-3 py-2 bg-blue-50 rounded-t-xl flex-shrink-0">
+        <div className="flex gap-2 items-center text-gray-700">
+          <div className="text-blue-600">
+            <ShareIcon />
           </div>
-          <div className="flex items-center">
-            <div className="pr-2 text-gray-500">
-              <a href={link} target="_blank">
-                <ShareIcon />
-              </a>
-            </div>
-            <div className="text-gray-500">
-              <ShareIcon />
-            </div>
+          {truncateText(title, 25)}
+        </div>
+        <div className="flex gap-2 items-center">
+          <div className="text-gray-500 hover:text-blue-600 hover:cursor-pointer hover:bg-blue-100 rounded-full p-2">
+            <ShareIcon />
           </div>
         </div>
+      </div>
 
-        <div className="pt-4">
+      {/* Embed Content Section */}
+      <div className="px-2 py-2 flex-1 flex items-center justify-center overflow-hidden">
+        <div className="w-full h-full">
           {type === "youtube" &&
             (() => {
               const embedUrl = getYouTubeEmbedUrl(link);
               return embedUrl ? (
                 <iframe
-                  className="w-full aspect-video rounded-xl"
+                  className="w-full h-full rounded-lg"
                   src={embedUrl}
                   title={title}
                   frameBorder="0"
@@ -71,11 +86,29 @@ const Card = ({ title, link, type }: CardProps) => {
               );
             })()}
           {type === "twitter" && (
-            <blockquote className="twitter-tweet max-h-32">
-              <a href={link.replace("x.com", "twitter.com")}></a>
-            </blockquote>
+            <div className="w-full h-full overflow-auto">
+              <blockquote className="twitter-tweet">
+                <a href={link.replace("x.com", "twitter.com")}></a>
+              </blockquote>
+            </div>
           )}
         </div>
+      </div>
+
+      {/* Footer Divider */}
+      <div className="border-b border-gray-200 flex-shrink-0"></div>
+      
+      {/* View Original Button */}
+      <div className="flex justify-center items-center py-3 flex-shrink-0">
+        <a 
+          href={link} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex gap-2 items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          <ExternalLink />
+          View Original
+        </a>
       </div>
     </div>
   );

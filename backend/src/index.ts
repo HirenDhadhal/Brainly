@@ -89,12 +89,10 @@ app.post("/api/v1/signin", async (req, res) => {
   }
 });
 
-app.get("/status", (req, res) => {  
-  console.log(req.user);
-  
+app.get("/status", userMiddleware, (req, res) => {
   if (req.user) {
     //@ts-ignore
-    res.send({ name: req.user.name, email: req.user.email, image: req.user.image, id: req.user._id });
+    res.send({ name: req.user.name, email: req.user.email, image: req.user.image, id: req.user._id,});
   } else {
     res.status(401).send({ user: null });
   }
@@ -119,11 +117,11 @@ app.post("/api/v1/content", userMiddleware, async (req, res) => {
   res.json({ message: "Content has been added" });
 });
 
-app.get("/api/v1/content", async (req, res) => {
+app.get("/api/v1/content", userMiddleware, async (req, res) => {
   //@ts-ignore
   const userId = req.user._id;
   const content = await ContentModel.find({ userId: userId }).populate(
-    "userId",
+    "userId"
   );
 
   console.log(content);
@@ -140,7 +138,7 @@ app.get("/api/v1/content", async (req, res) => {
   res.json({ content: filteredContent });
 });
 
-app.delete("/api/v1/content", async (req, res) => {
+app.delete("/api/v1/content", userMiddleware, async (req, res) => {
   const contentId = req.body.contentId;
 
   //@ts-ignore
@@ -148,8 +146,28 @@ app.delete("/api/v1/content", async (req, res) => {
   res.json({ message: "Content deleted successfully" });
 });
 
+//Check if Share Brain Functionality is On/Off
+app.get("/api/v1/brain/share", userMiddleware, async (req, res) => {
+  const user = req.user;
+
+  if (user) {
+    const existingLink = await LinkModel.findOne({
+      //@ts-ignore
+      userId: user._id,
+    });
+
+    if (!existingLink) {
+      res.json({ sharing: false });
+    } else {
+      res.json({ sharing: true, hash: existingLink.hash });
+    }
+  } else {
+    res.json({ message: "Not Authenticated, Please Sign In" });
+  }
+});
+
 //Share Brain On/Off Functionality
-app.post("/api/v1/brain/share", async (req, res) => {
+app.post("/api/v1/brain/share", userMiddleware, async (req, res) => {
   const share = req.body.share;
   const user = req.user;
 
@@ -180,7 +198,7 @@ app.post("/api/v1/brain/share", async (req, res) => {
 });
 
 //View Other User's brain from hash
-app.get("/api/v1/brain/:shareLink", async (req, res) => {
+app.get("/api/v1/brain/:shareLink", userMiddleware, async (req, res) => {
   const hash = req.params.shareLink;
 
   const link = await LinkModel.findOne({
@@ -192,7 +210,7 @@ app.get("/api/v1/brain/:shareLink", async (req, res) => {
     return;
   }
 
-  const content = await ContentModel.findOne({ userId: link.userId });
+  const content = await ContentModel.find({ userId: link.userId });
 
   const user = await UserModel.findOne({
     _id: link.userId,
@@ -264,9 +282,9 @@ app.post("/api/v1/loadembedding", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send('<a href="/google">Authenticate with Google</a>');
-});
+// app.get("/", (req, res) => {
+//   res.send('<a href="/google">Authenticate with Google</a>');
+// });
 
 //Google Login
 app.get(
@@ -289,7 +307,7 @@ app.get(
 );
 
 //SignOut
-app.get("/logout", (req, res, next) => {
+app.get("/auth/logout", userMiddleware, (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
     req.session.destroy(() => {

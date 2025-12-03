@@ -14,6 +14,12 @@ type StateStore = {
   ShareBrainModelOpen: boolean;
   setIsShareBrainModelOpen: (open: boolean) => void;
 
+  ShareBrainStatus: boolean;
+  setIsShareBrainStatus: (open: boolean) => void;
+
+  ShareBrainHash: string,
+  setShareBrainHash: (hash: string) => void;
+
   AccountModelOpen: boolean;
   setIsAccountModelOpen: (open: boolean) => void;
 
@@ -40,6 +46,12 @@ export const useStateStore = create<StateStore>((set) => ({
 
   ShareBrainModelOpen: false,
   setIsShareBrainModelOpen: (open) => set({ ShareBrainModelOpen: open}),
+
+  ShareBrainStatus: false,
+  setIsShareBrainStatus: (share: boolean) => set({ ShareBrainStatus: share}),
+
+  ShareBrainHash: "",
+  setShareBrainHash: (hash: string) => set({ ShareBrainHash: hash}),
 
   AccountModelOpen: false,
   setIsAccountModelOpen: (open) => set({ AccountModelOpen: open}),
